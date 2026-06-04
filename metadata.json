@@ -1,0 +1,6 @@
+{
+  "name": "Simulateur de Projectile",
+  "description": "Simulation physique professionnelle interactive de mouvement de projectile dans un champ de pesanteur avec et sans frottement pour étudiants et enseignants.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
