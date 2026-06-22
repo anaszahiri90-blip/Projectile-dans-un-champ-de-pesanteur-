@@ -69,3 +69,11 @@ export interface TargetChallenge {
   isFailed: boolean;
   attempts: number;
 }
+
+export interface DidacticObstacle {
+  active: boolean;
+  x: number;
+  height: number;
+  width: number;
+}
+

@@ -5,7 +5,7 @@
 
 import React, { useMemo, useRef, useState, useEffect } from 'react';
 import { Play, Pause, RotateCcw, Eye, Target, AlertTriangle } from 'lucide-react';
-import { SimulationPoint, TrajectoryData, PhysicalParameters, TargetChallenge } from '../types';
+import { SimulationPoint, TrajectoryData, PhysicalParameters, TargetChallenge, DidacticObstacle } from '../types';
 
 interface SimulationCanvasProps {
   vacuumTrajectory: TrajectoryData;
@@ -19,6 +19,7 @@ interface SimulationCanvasProps {
   setPlaybackSpeed: (s: number) => void;
   challenge: TargetChallenge;
   onTargetHitCheck: (x: number, y: number) => void;
+  didacticObstacle: DidacticObstacle;
 }
 
 export default function SimulationCanvas({
@@ -33,6 +34,7 @@ export default function SimulationCanvas({
   setPlaybackSpeed,
   challenge,
   onTargetHitCheck,
+  didacticObstacle,
 }: SimulationCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState({ width: 800, height: 420 });
@@ -82,6 +84,9 @@ export default function SimulationCanvas({
         maxX = Math.max(maxX, challenge.obstacleX + challenge.obstacleWidth + 5);
         maxY = Math.max(maxY, challenge.obstacleY + challenge.obstacleHeight + 5);
       }
+    } else if (didacticObstacle.active) {
+      maxX = Math.max(maxX, didacticObstacle.x + didacticObstacle.width + 5);
+      maxY = Math.max(maxY, didacticObstacle.height + 5);
     }
 
     // Add padding margin
@@ -93,7 +98,7 @@ export default function SimulationCanvas({
     if (maxY < 8) maxY = 8;
 
     return { maxX, maxY };
-  }, [vacuumTrajectory, activeTrajectory, challenge]);
+  }, [vacuumTrajectory, activeTrajectory, challenge, didacticObstacle]);
 
   // Translate physical coordinates (meters) to SVG viewbox coordinates (pixels)
   const padding = { left: 55, right: 30, top: 40, bottom: 45 };
@@ -146,12 +151,18 @@ export default function SimulationCanvas({
 
   // Find point in activeTrajectory closest to center of the obstacle-wall
   const obstaclePassagePt = useMemo(() => {
-    if (!challenge.active || !challenge.obstacleActive || activeTrajectory.points.length === 0) return null;
-    
-    const obsCenterX = challenge.obstacleX + challenge.obstacleWidth / 2;
+    const isChallengeWall = challenge.active && challenge.obstacleActive;
+    const isDidacticWall = !challenge.active && didacticObstacle.active;
+
+    if ((!isChallengeWall && !isDidacticWall) || activeTrajectory.points.length === 0) return null;
+
+    const obsX = isChallengeWall ? challenge.obstacleX : didacticObstacle.x;
+    const obsWidth = isChallengeWall ? challenge.obstacleWidth : didacticObstacle.width;
+
+    const obsCenterX = obsX + obsWidth / 2;
     let closestPt = activeTrajectory.points[0];
     let minDiff = Math.abs(closestPt.x - obsCenterX);
-    
+
     for (const pt of activeTrajectory.points) {
       const diff = Math.abs(pt.x - obsCenterX);
       if (diff < minDiff) {
@@ -159,14 +170,14 @@ export default function SimulationCanvas({
         closestPt = pt;
       }
     }
-    
+
     // Safety guard: only return if it actually reaches/crosses around the obstacle X
-    if (closestPt.x < challenge.obstacleX - 1.5 || closestPt.x > challenge.obstacleX + challenge.obstacleWidth + 1.5) {
+    if (closestPt.x < obsX - 1.5 || closestPt.x > obsX + obsWidth + 1.5) {
       return null;
     }
-    
+
     return closestPt;
-  }, [activeTrajectory, challenge]);
+  }, [activeTrajectory, challenge, didacticObstacle]);
 
   // Check target hits
   useEffect(() => {
@@ -270,12 +281,12 @@ export default function SimulationCanvas({
       {/* Title with live speed & timer */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
         <div>
-          <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
+          <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
             <span className="w-2.5 h-2.5 rounded-full bg-indigo-600 animate-pulse"></span>
-            Espace Physologique 2D
+            Schéma expérimental bidimensionnel (2D) du projectile
           </h2>
-          <p className="text-xs text-slate-500 font-mono mt-0.5">
-            Échelle mathématique : 1m = {Math.round(scale)}px | Pas d'intégration d'Euler : dt = 0.005s
+          <p className="text-xs text-indigo-600 font-semibold mt-0.5">
+            Échelle : 1 mètre = {Math.round(scale)} pixels | Résolution temporelle (Runge-Kutta) : dt = 0.005 s
           </p>
         </div>
 
@@ -405,13 +416,13 @@ export default function SimulationCanvas({
                 y2={dimensions.height - padding.bottom} 
               />
               {/* Arrow symbols labels */}
-              <text x={dimensions.width - padding.right - 5} y={dimensions.height - padding.bottom + 15} className="fill-slate-600 font-sans font-medium text-[10px]" textAnchor="end">X (Distance en mètres)</text>
-              <text x={padding.left - 10} y={padding.top - 10} className="fill-slate-600 font-sans font-medium text-[10px]" textAnchor="start">Y (Altitude en m)</text>
+              <text x={dimensions.width - padding.right - 5} y={dimensions.height - padding.bottom + 15} className="fill-slate-600 font-sans font-bold text-[10px]" textAnchor="end">X : Distance horizontale (Portée - Mètres)</text>
+              <text x={padding.left - 10} y={padding.top - 10} className="fill-slate-600 font-sans font-bold text-[10px]" textAnchor="start">Y : Altitude verticale (Hauteur - Mètres)</text>
             </g>
           )}
 
-          {/* 3. Obstacle (Challenge mode) */}
-          {challenge.active && challenge.obstacleActive && (
+          {/* 3. Obstacle (Challenge mode OR Didactic mode in lessons) */}
+          {challenge.active && challenge.obstacleActive ? (
             <g id="challenge-obstacle">
               {(() => {
                 const wallTL = physToSvg(challenge.obstacleX, challenge.obstacleY + challenge.obstacleHeight);
@@ -440,7 +451,7 @@ export default function SimulationCanvas({
                     <text 
                       x={wallTL.x + wallWidth / 2} 
                       y={wallTL.y + wallHeight / 2 + 3} 
-                      className="fill-slate-500 font-sans font-bold text-[8px] sm:text-[10px]" 
+                      className="fill-slate-550 font-sans font-bold text-[8px] sm:text-[10px]" 
                       textAnchor="middle"
                     >
                       Obstacle !
@@ -449,7 +460,55 @@ export default function SimulationCanvas({
                 );
               })()}
             </g>
-          )}
+          ) : (!challenge.active && didacticObstacle.active ? (
+            <g id="didactic-obstacle">
+              {(() => {
+                const wallTL = physToSvg(didacticObstacle.x, didacticObstacle.height);
+                const wallWidth = didacticObstacle.width * scale;
+                const wallHeight = didacticObstacle.height * scale;
+                return (
+                  <g>
+                    <rect 
+                      x={wallTL.x} 
+                      y={wallTL.y} 
+                      width={wallWidth} 
+                      height={wallHeight} 
+                      fill="url(#brick)" 
+                      stroke="#4f46e5" 
+                      strokeWidth="2"
+                      rx="3"
+                      opacity="0.85"
+                    />
+                    {/* Top striping */}
+                    <rect 
+                      x={wallTL.x} 
+                      y={wallTL.y} 
+                      width={wallWidth} 
+                      height="4" 
+                      fill="#4f46e5"
+                    />
+                    <text 
+                      x={wallTL.x + wallWidth / 2} 
+                      y={wallTL.y + wallHeight / 2 + 3} 
+                      className="fill-indigo-600 font-sans font-bold text-[8px] sm:text-[10px]" 
+                      textAnchor="middle"
+                    >
+                      Obstacle Didactique (X={didacticObstacle.x}m)
+                    </text>
+                    {/* Arrow showing height */}
+                    <text 
+                      x={wallTL.x + wallWidth / 2} 
+                      y={wallTL.y - 6} 
+                      className="fill-indigo-550 font-sans font-bold text-[9px]" 
+                      textAnchor="middle"
+                    >
+                      H = {didacticObstacle.height} m
+                    </text>
+                  </g>
+                );
+              })()}
+            </g>
+          ) : null)}
 
           {/* 4. Target Bullseye (Challenge mode) */}
           {challenge.active && (
@@ -482,35 +541,29 @@ export default function SimulationCanvas({
           )}
 
           {/* 5. Trajectory paths */}
-          {/* Theoretical Vacuum (always drawn in background style for educational visual reference) */}
-          {vacuumPath && (
-            <path 
-              d={vacuumPath} 
-              fill="none" 
-              stroke="#64748b" 
-              strokeWidth="2.5" 
-              strokeDasharray="4 4" 
-              opacity="0.4"
-            />
-          )}
-
-          {/* Active trajectory line */}
+          {/* Active trajectory line - Converted to Indigo for high contrast and modern styling in vacuum */}
           {activePath && (
             <path 
               d={activePath} 
               fill="none" 
-              stroke={params.airResistanceEnabled ? '#4f46e5' : '#10b981'} 
-              strokeWidth="3" 
-              opacity="0.9"
+              stroke="#4f46e5" 
+              strokeWidth="3.5" 
+              opacity="0.95"
             />
           )}
 
           {/* Obstacle clearance height indicator */}
-          {challenge.active && challenge.obstacleActive && obstaclePassagePt && (
-            <g id="challenge-obstacle-clearance">
+          {((challenge.active && challenge.obstacleActive) || (!challenge.active && didacticObstacle.active)) && obstaclePassagePt && (
+            <g id="obstacle-clearance-indicator">
               {(() => {
-                const obsCenterX = challenge.obstacleX + challenge.obstacleWidth / 2;
-                const obsTopY = challenge.obstacleHeight;
+                const isChallengeWall = challenge.active && challenge.obstacleActive;
+                const obsCenterX = isChallengeWall 
+                  ? (challenge.obstacleX + challenge.obstacleWidth / 2)
+                  : (didacticObstacle.x + didacticObstacle.width / 2);
+                const obsTopY = isChallengeWall ? challenge.obstacleHeight : didacticObstacle.height;
+                const strokeColor = isChallengeWall ? '#ef4444' : '#4f46e5';
+                const fillColor = isChallengeWall ? '#fef2f2' : '#f5f3ff';
+                const textClassName = isChallengeWall ? 'fill-red-850 font-sans' : 'fill-indigo-900 font-sans';
                 
                 // Active clearance coordinates
                 const projPt = physToSvg(obstaclePassagePt.x, obstaclePassagePt.y);
@@ -542,12 +595,11 @@ export default function SimulationCanvas({
                           y1={wallTopPt.y} 
                           x2={projPt.x} 
                           y2={projPt.y} 
-                          stroke="#10b981" 
+                          stroke={isChallengeWall ? '#10b981' : '#4f46e5'} 
                           strokeWidth="2.5" 
                         />
-                        {/* Little helper ticks at the end of the clearance connector */}
-                        <line x1={wallTopPt.x - 4} y1={wallTopPt.y} x2={wallTopPt.x + 4} y2={wallTopPt.y} stroke="#10b981" strokeWidth="2" />
-                        <line x1={projPt.x - 4} y1={projPt.y} x2={projPt.x + 4} y2={projPt.y} stroke="#10b981" strokeWidth="2" />
+                        <line x1={wallTopPt.x - 4} y1={wallTopPt.y} x2={wallTopPt.x + 4} y2={wallTopPt.y} stroke={isChallengeWall ? '#10b981' : '#4f46e5'} strokeWidth="2" />
+                        <line x1={projPt.x - 4} y1={projPt.y} x2={projPt.x + 4} y2={projPt.y} stroke={isChallengeWall ? '#10b981' : '#4f46e5'} strokeWidth="2" />
                         
                         {/* Text bubble showing the exact clearance */}
                         <rect 
@@ -556,27 +608,26 @@ export default function SimulationCanvas({
                           width="122" 
                           height="20" 
                           rx="4" 
-                          fill="#f0fdf4" 
-                          stroke="#10b981" 
+                          fill={isChallengeWall ? '#f0fdf4' : '#f5f3ff'} 
+                          stroke={isChallengeWall ? '#10b981' : '#b2b7ff'} 
                           strokeWidth="1.2" 
                         />
                         <text 
                           x={wallTopPt.x + 12} 
                           y={(wallTopPt.y + projPt.y) / 2 + 3} 
-                          className="fill-emerald-800 font-sans font-extrabold text-[9px] select-none"
+                          className={`${isChallengeWall ? 'fill-emerald-800 font-sans' : 'fill-indigo-900 font-sans'} font-extrabold text-[9px] select-none`}
                         >
-                          Dégagement : +{clearanceValue.toFixed(2)}m
+                          Dégagement : +{clearanceValue.toFixed(2)} m
                         </text>
                       </g>
                     ) : (
-                      // If trajectory goes below the wall top (collision)
                       <g>
                         <line 
                           x1={projPt.x} 
                           y1={projPt.y} 
                           x2={wallTopPt.x} 
                           y2={wallTopPt.y} 
-                          stroke="#ef4444" 
+                          stroke={strokeColor} 
                           strokeWidth="2" 
                           strokeDasharray="2 2"
                         />
@@ -586,16 +637,16 @@ export default function SimulationCanvas({
                           width="122" 
                           height="20" 
                           rx="4" 
-                          fill="#fef2f2" 
-                          stroke="#ef4444" 
+                          fill={fillColor} 
+                          stroke={strokeColor} 
                           strokeWidth="1.2" 
                         />
                         <text 
                           x={wallTopPt.x + 12} 
                           y={(wallTopPt.y + projPt.y) / 2 + 3} 
-                          className="fill-red-800 font-sans font-extrabold text-[9px] select-none"
+                          className={`${textClassName} font-extrabold text-[9px] select-none`}
                         >
-                          Déficit : {clearanceValue.toFixed(2)}m
+                          Déficit : {clearanceValue.toFixed(2)} m
                         </text>
                       </g>
                     )}
@@ -608,7 +659,7 @@ export default function SimulationCanvas({
                       className="fill-indigo-950 font-mono text-[9px] font-bold bg-white" 
                       textAnchor="middle"
                     >
-                      H_passage = {obstaclePassagePt.y.toFixed(2)}m
+                      H_passage = {obstaclePassagePt.y.toFixed(2)} m
                     </text>
                   </g>
                 );
@@ -629,9 +680,9 @@ export default function SimulationCanvas({
                   <g>
                     <circle cx={peakSvg.x} cy={peakSvg.y} r="3" fill="#ef4444" />
                     <line x1={peakSvg.x} y1={peakSvg.y} x2={peakSvg.x} y2={peakSvg.y - 20} stroke="#ef4444" strokeWidth="1" strokeDasharray="2 1" />
-                    <rect x={peakSvg.x - 35} y={peakSvg.y - 34} width="70" height="13" rx="3" fill="white" stroke="#ef4444" strokeWidth="0.8" />
-                    <text x={peakSvg.x} y={peakSvg.y - 25} className="fill-red-600 font-mono text-[8px] font-bold" textAnchor="middle">
-                      Flèche : {exactPeakPt.y.toFixed(2)}m
+                    <rect x={peakSvg.x - 50} y={peakSvg.y - 34} width="100" height="14" rx="3" fill="white" stroke="#ef4444" strokeWidth="0.8" />
+                    <text x={peakSvg.x} y={peakSvg.y - 24} className="fill-red-600 font-sans text-[8.5px] font-bold" textAnchor="middle">
+                      Sommet : {exactPeakPt.y.toFixed(2)} m
                     </text>
                   </g>
                 );
@@ -644,8 +695,8 @@ export default function SimulationCanvas({
                   <g>
                     <circle cx={landingSvg.x} cy={landingSvg.y} r="3.5" fill="#4f46e5" />
                     <line x1={landingSvg.x} y1={landingSvg.y} x2={landingSvg.x} y2={landingSvg.y + 15} stroke="#4f46e5" strokeWidth="1" strokeDasharray="2 1" />
-                    <text x={landingSvg.x} y={landingSvg.y + 26} className="fill-indigo-700 font-mono text-[9px] font-bold" textAnchor="middle">
-                      Portée : {activeTrajectory.range.toFixed(2)}m
+                    <text x={landingSvg.x} y={landingSvg.y + 26} className="fill-indigo-700 font-sans text-[10px] font-bold" textAnchor="middle">
+                      Portée : {activeTrajectory.range.toFixed(2)} m
                     </text>
                   </g>
                 );
@@ -857,6 +908,7 @@ export default function SimulationCanvas({
             </div>
           </div>
         )}
+
       </div>
 
       {/* Playback Controls Panel */}
@@ -967,7 +1019,7 @@ export default function SimulationCanvas({
             onChange={(e) => setShowVectors(e.target.checked)}
             className="rounded text-indigo-600 focus:ring-indigo-500 h-3.5 w-3.5"
           />
-          Vecteurs (Vitesse v⃗, Poids P⃗, Frottement f⃗)
+          Vecteurs (Vitesse v⃗, Poids P⃗)
         </label>
       </div>
     </div>

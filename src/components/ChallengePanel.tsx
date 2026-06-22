@@ -34,8 +34,8 @@ export interface ChallengeLevel {
 const PRESET_LEVELS: ChallengeLevel[] = [
   {
     id: 'easy_ground',
-    name: 'Niveau 1 : Initiation',
-    description: 'Une cible posée au sol à 25m. Pas d\'obstacle. Trouvez l\'angle idéal !',
+    name: "Niveau 1 : Test d'initiation de portée (Initiation)",
+    description: "La cible est placée sur le sol à une distance de X = 25m. Aucun obstacle n'est présent. Trouvez la vitesse et l'angle optimaux pour l'atteindre !",
     targetX: 25,
     targetY: 0,
     obstacleActive: false,
@@ -43,12 +43,12 @@ const PRESET_LEVELS: ChallengeLevel[] = [
     obstacleY: 0,
     obstacleWidth: 0,
     obstacleHeight: 0,
-    presetParams: { h0: 0, airResistanceEnabled: false, v0: 16, angle: 30 },
+    presetParams: { h0: 0, airResistanceEnabled: false, v0: 16, angle: 30, mass: 1 },
   },
   {
     id: 'medium_wall',
-    name: 'Niveau 2 : Par-dessus la muraille',
-    description: 'Une cible à 40m de distance, protégée par un mur vertical de 8 mètres de haut situé au milieu du parcours.',
+    name: 'Niveau 2 : Passage par-dessus le mur (Obstacle)',
+    description: "La cible se situe à une distance de 40m, abritée par un mur vertical de 8 mètres de hauteur situé au milieu du parcours (X = 18m).",
     targetX: 40,
     targetY: 0,
     obstacleActive: true,
@@ -56,12 +56,12 @@ const PRESET_LEVELS: ChallengeLevel[] = [
     obstacleY: 0,
     obstacleWidth: 3,
     obstacleHeight: 8,
-    presetParams: { h0: 0, airResistanceEnabled: false, v0: 22, angle: 55 },
+    presetParams: { h0: 0, airResistanceEnabled: false, v0: 22, angle: 55, mass: 1 },
   },
   {
     id: 'hard_roof',
-    name: 'Niveau 3 : Le toit fortifié',
-    description: 'La cible est nichée sur une plateforme en hauteur (5.5m), écartée de 35m d\'un lanceur juché sur le sol.',
+    name: 'Niveau 3 : Le toit fortifié (Hauteur et Distance)',
+    description: "La cible est posée sur une plateforme surélevée (altitude Y = 5.5m) située à 35m du point d'impact, avec un mur d'obstacle de 8.5 mètres à franchir.",
     targetX: 35,
     targetY: 5.5,
     obstacleActive: true,
@@ -69,7 +69,7 @@ const PRESET_LEVELS: ChallengeLevel[] = [
     obstacleY: 0,
     obstacleWidth: 4,
     obstacleHeight: 8.5,
-    presetParams: { h0: 0, airResistanceEnabled: false, v0: 24, angle: 45 },
+    presetParams: { h0: 0, airResistanceEnabled: false, v0: 24, angle: 45, mass: 1 },
   },
 ];
 
@@ -109,7 +109,7 @@ export default function ChallengePanel({
     const v0y = v0 * Math.sin(angleRad);
     
     if (v0x <= 0.01) {
-      return { reaches: false, reason: "Le projectile est tiré verticalement ou vers l'arrière !" };
+      return { reaches: false, reason: "Le projectile a été lancé verticalement ou vers l'arrière !" };
     }
     
     const tPassage = xObs / v0x;
@@ -227,16 +227,16 @@ export default function ChallengePanel({
       <div className="flex items-center justify-between border-b border-slate-100 pb-3">
         <div>
           <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
-            <Swords className="w-5 h-5 text-red-600 animate-pulse" />
-            Défi Cible Pédagogique
+            <Swords className="w-5 h-5 text-red-650 animate-pulse" />
+            Défis académiques & entraînement
           </h2>
-          <p className="text-xs text-slate-500">Apprenez à viser en combinant physique et intuition !</p>
+          <p className="text-xs text-slate-500">Développez votre intuition physique et visez les cibles dans ce simulateur !</p>
         </div>
 
         {challenge.active && (
           <button
             onClick={stopChallenge}
-            className="text-xs font-semibold text-slate-500 hover:text-slate-800 border border-slate-200 px-2.5 py-1 rounded-lg cursor-pointer"
+            className="text-xs font-semibold text-slate-550 hover:text-slate-800 border border-slate-200 px-2.5 py-1 rounded-lg cursor-pointer transition"
           >
             Quitter le défi
           </button>
@@ -246,64 +246,61 @@ export default function ChallengePanel({
       {challenge.active ? (
         /* Active Game HUD screen */
         <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-3 bg-red-50/40 p-4 rounded-xl border border-red-100">
+          <div className="grid grid-cols-2 gap-3 bg-red-50/20 p-4 rounded-xl border border-red-100/50">
             <div>
-              <span className="text-[10px] text-slate-450 uppercase font-bold block">Coordonnées de la cible</span>
-              <span className="font-mono text-sm font-extrabold text-red-800">
-                X = {challenge.targetX}m | Y = {challenge.targetY}m
+              <span className="text-[10px] text-slate-500 uppercase font-bold block">Coordonnées de la cible</span>
+              <span className="font-mono text-sm font-extrabold text-red-700">
+                X = {challenge.targetX} m | Y = {challenge.targetY} m
               </span>
             </div>
             <div className="text-right">
-              <span className="text-[10px] text-slate-450 uppercase font-bold block">Nombre de tirs</span>
+              <span className="text-[10px] text-slate-500 uppercase font-bold block">Tirs effectués</span>
               <span className="font-mono text-sm font-extrabold text-slate-700">
-                {challenge.attempts} tentative{challenge.attempts > 1 ? 's' : ''}
+                {challenge.attempts} tentative(s)
               </span>
             </div>
 
             {challenge.obstacleActive && (
-              <div className="col-span-2 pt-2 border-t border-red-100 text-[11px] text-slate-500">
-                ⚠️ <b>Obstacle détecté :</b> Un mur imposant de {challenge.obstacleHeight}m de haut fait écran à X = {challenge.obstacleX}m. Choisissez une trajectoire en cloche (angle θ élevé) !
+              <div className="col-span-2 pt-2 border-t border-red-100/30 text-[11px] text-slate-600 font-sans">
+                ⚠️ <b className="text-red-950 font-bold">Alerte Obstacle :</b> Il y a un mur vertical de hauteur <b>{challenge.obstacleHeight} m</b> situé à <b>X = {challenge.obstacleX} m</b>. Ajustez de l'angle et de la vitesse pour passer au-dessus !
               </div>
             )}
           </div>
 
           {/* Mission Élève - Vérification de la hauteur de dégagement */}
           {challenge.obstacleActive && analyticalDetails && (
-            <div className="p-4 rounded-xl border border-indigo-100 bg-indigo-50/15 space-y-3 shadow-inner" id="educational-clearance-task">
+            <div className="p-4 rounded-xl border border-indigo-150 bg-indigo-50/15 space-y-3 shadow-inner" id="educational-clearance-task">
               <div className="flex items-center gap-2">
-                <span className="flex items-center justify-center w-5 h-5 rounded-full bg-indigo-600 text-[10px] font-bold text-white uppercase font-mono">DÉFI</span>
+                <span className="flex items-center justify-center w-5 h-5 rounded-full bg-indigo-600 text-[11px] font-bold text-white uppercase font-mono">Calcul</span>
                 <h4 className="text-xs font-bold text-indigo-950 uppercase tracking-widest">
-                  Tâche : Vérification de Hauteur d'Obstacle
+                  Mission élève : Vérifier si la hauteur franchit le mur d'obstacle
                 </h4>
               </div>
               
               <p className="text-xs text-slate-600 leading-relaxed font-sans">
-                Avant de tirer, calculez l'altitude théorique <span className="font-mono text-indigo-600 font-bold">Y(x)</span> du projectile au niveau de l'obstacle (<span className="font-mono font-semibold">x = {analyticalDetails.xObs.toFixed(1)}m</span>), dans le vide :
+                Calculez l'altitude théorique attendue <span className="font-mono text-indigo-700 font-bold">Y(x)</span> du projectile lorsqu'il arrive au niveau de l'obstacle (<span className="font-mono font-semibold">x = {analyticalDetails.xObs.toFixed(1)} m</span>) pour vérifier s'il franchit le mur de face (en considérant l'idéal sous vide) :
                 <br />
-                <span className="inline-block mt-1 font-mono text-[10px] text-slate-500 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100">
-                  v₀ = {params.v0} m/s | θ = {params.angle}° | h₀ = {params.h0}m | g = {params.g} m/s²
+                <span className="inline-block mt-1.5 font-mono text-[10px] text-slate-500 bg-white/70 px-2 py-1 rounded border border-slate-100 shadow-sm direction-ltr text-left">
+                  v₀ = {params.v0} m/s | θ = {params.angle}° | h₀ = {params.h0} m | g = {params.g} m/s²
                 </span>
               </p>
               
               {analyticalDetails.reaches ? (
                 <div className="space-y-2.5 font-sans">
                   <div className="flex gap-2">
-                    <div className="relative flex-1">
-                      <input
-                        type="text"
-                        value={studentHeightInput}
-                        onChange={(e) => setStudentHeightInput(e.target.value)}
-                        placeholder="Ex: 8.4"
-                        className="w-full text-xs px-3 py-2 rounded-lg border border-slate-200 focus:outline bg-white text-slate-800 focus:outline-indigo-500 font-mono"
-                        id="student-height-answer-input"
-                      />
-                      <span className="absolute right-3 top-2 text-xs text-slate-400 font-mono">m</span>
-                    </div>
+                    <input
+                      type="text"
+                      value={studentHeightInput}
+                      onChange={(e) => setStudentHeightInput(e.target.value)}
+                      placeholder="Votre réponse (ex: 8.41)"
+                      className="flex-1 text-xs px-3 py-2 rounded-lg border border-slate-200 focus:outline bg-white text-slate-800 focus:outline-indigo-500 font-mono shadow-sm"
+                      id="student-height-answer-input"
+                    />
                     <button
                       onClick={handleVerify}
-                      className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold transition cursor-pointer shrink-0"
+                      className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold transition cursor-pointer shrink-0 shadow-sm"
                     >
-                      Vérifier mon calcul
+                      Vérifier
                     </button>
                   </div>
                   
@@ -313,14 +310,14 @@ export default function ChallengePanel({
                         <div className="p-2.5 rounded-lg bg-emerald-50 border border-emerald-250 text-emerald-800 flex items-start gap-2">
                           <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5 animate-bounce" />
                           <div>
-                            <b>Bravo !</b> Votre calcul de trajectoire théorique est excellent. L'altitude sous-vide à x = {analyticalDetails.xObs.toFixed(1)}m est d'environ <b>{analyticalDetails.yPassageVacuum.toFixed(2)}m</b>.
+                            <b>Excellent travail !</b> Vos calculs ou approximations sont parfaitement corrects. La hauteur théorique calculée est bien d'environ <b>{analyticalDetails.yPassageVacuum.toFixed(2)} m</b>, ce qui prouve mathématiquement qu'il passe au-dessus du mur.
                           </div>
                         </div>
                       ) : (
-                        <div className="p-2.5 rounded-lg bg-amber-55 border border-amber-200 text-amber-900 flex items-start gap-2">
+                        <div className="p-2.5 rounded-lg bg-amber-50 border border-amber-250 text-amber-900 flex items-start gap-2">
                           <XCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
                           <div>
-                            <b>Écart détecté !</b> L'altitude sous vide calculée s'écarte de la simulation. Équations attendues : t = x / (v₀·cosθ) puis remplacez t dans Y(t).
+                            <b>La réponse diffère de la théorie !</b> La hauteur attendue n'est pas tout à fait correcte. Rappel de la méthode : trouvez l'instant t = x / (v₀·cosθ) puis calculez Y(t).
                           </div>
                         </div>
                       )}
@@ -334,46 +331,46 @@ export default function ChallengePanel({
                       onClick={() => setShowResolution(!showResolution)}
                       className="text-[10px] font-bold text-indigo-700 hover:text-indigo-900 flex items-center gap-1 cursor-pointer uppercase tracking-wider"
                     >
-                      {showResolution ? 'Masquer la résolution détaillée 📝' : 'La formule & démonstration détaillée 📝'}
+                      {showResolution ? 'Masquer la démonstration détaillée 📝' : 'Afficher la démonstration détaillée 📝'}
                     </button>
                     
                     {showResolution && (
-                      <div className="mt-2.5 bg-slate-50 p-3 rounded-lg border border-slate-150 space-y-2 text-[10.5px] text-slate-650 font-sans leading-relaxed">
+                      <div className="mt-2.5 bg-slate-50 p-3 rounded-lg border border-slate-150 space-y-2 text-[10.5px] text-slate-700 font-sans leading-relaxed text-left">
                         <div>
-                          <b className="text-slate-800">1. Instant de passage au centre du mur :</b>
-                          <div className="font-mono text-slate-500 bg-white px-2 py-1.5 rounded mt-1 border border-slate-100">
+                          <b className="text-indigo-950 font-bold block mb-1">1. Temps de vol jusqu'à l'abscisse de l'obstacle :</b>
+                          <div className="font-mono text-slate-500 bg-white px-2 py-1.5 rounded border border-slate-100 inline-block direction-ltr text-left">
                             t_passage = x_obstacle / (v₀ * cos(θ))
                             <br />
-                            t_passage = {analyticalDetails.xObs.toFixed(1)} / ({params.v0} * cos({params.angle}°)) = <span className="text-indigo-600 font-bold">{analyticalDetails.tPassage.toFixed(3)}s</span>
+                            t_passage = {analyticalDetails.xObs.toFixed(1)} / ({params.v0} * cos({params.angle}°)) = <span className="text-indigo-650 font-bold">{analyticalDetails.tPassage.toFixed(3)} s</span>
                           </div>
                         </div>
                         
                         <div>
-                          <b className="text-slate-800">2. Évaluation de l'altitude théorique Y(t) :</b>
-                          <div className="font-mono text-slate-500 bg-white px-2 py-1.5 rounded mt-1 border border-slate-100">
+                          <b className="text-indigo-950 font-bold block mb-1">2. Altitude théorique Y à cet instant :</b>
+                          <div className="font-mono text-slate-500 bg-white px-2 py-1.5 rounded border border-slate-100 inline-block direction-ltr text-left">
                             Y(t) = -0.5 * g * t² + v₀*sin(θ)*t + h₀
                             <br />
                             Y = -0.5 * {params.g} * ({analyticalDetails.tPassage.toFixed(3)})² + {params.v0} * sin({params.angle}°) * {analyticalDetails.tPassage.toFixed(3)} + {params.h0}
                             <br />
-                            Y ≈ <span className="text-indigo-600 font-bold">{analyticalDetails.yPassageVacuum.toFixed(2)}m</span>
+                            Y ≈ <span className="text-indigo-650 font-bold">{analyticalDetails.yPassageVacuum.toFixed(2)} m</span>
                           </div>
                         </div>
                         
                         <div>
-                          <b className="text-slate-800">3. Comparaison avec le mur :</b>
+                          <b className="text-indigo-950 font-bold block mb-1">3. Comparaison avec la hauteur de l'obstacle :</b>
                           <p className="mt-1">
-                            Altitude théorique : <b>{analyticalDetails.yPassageVacuum.toFixed(2)}m</b>
+                            Altitude théorique du projectile : <b>{analyticalDetails.yPassageVacuum.toFixed(2)} m</b>
                             <br />
-                            Hauteur du mur : <b>{challenge.obstacleHeight}m</b>
+                            Hauteur du mur d'obstacle : <b>{challenge.obstacleHeight} m</b>
                           </p>
-                          <div className={`p-1.5 rounded text-center font-mono font-bold mt-1 ${
+                          <div className={`p-2 rounded text-center font-mono font-bold mt-1.5 ${
                             analyticalDetails.yPassageVacuum > challenge.obstacleHeight 
-                              ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' 
-                              : 'bg-red-50 text-red-800 border border-red-200'
+                              ? 'bg-emerald-50 text-emerald-800 border border-emerald-250' 
+                              : 'bg-red-50 text-red-800 border border-red-250'
                           }`}>
                             {analyticalDetails.yPassageVacuum > challenge.obstacleHeight 
-                              ? `DÉGAGEMENT ASSURÉ DES PARAMÈTRES : +${(analyticalDetails.yPassageVacuum - challenge.obstacleHeight).toFixed(2)}m` 
-                              : `COLLISION DIRECTE théorique : déficit de ${(challenge.obstacleHeight - analyticalDetails.yPassageVacuum).toFixed(2)}m`
+                              ? `Le projectile franchit le mur avec une marge de : +${(analyticalDetails.yPassageVacuum - challenge.obstacleHeight).toFixed(2)} m` 
+                              : `Collision directe théorique : défaut de hauteur de ${(challenge.obstacleHeight - analyticalDetails.yPassageVacuum).toFixed(2)} m`
                             }
                           </div>
                         </div>
@@ -383,7 +380,7 @@ export default function ChallengePanel({
                 </div>
               ) : (
                 <div className="p-2.5 rounded-lg bg-amber-50 text-amber-900 text-xs border border-amber-100 font-sans">
-                  ⚠️ Le projectile s'écrase sur le sol avant d'arriver à la distance de l'obstacle ({analyticalDetails.xObs.toFixed(1)}m). Veuillez adapter v₀ ou θ pour prolonger le vol.
+                  ⚠️ Le projectile retombe au sol avant d'arriver au niveau de l'obstacle ({analyticalDetails.xObs.toFixed(1)} m). Augmentez la vitesse initiale ou modifiez l'angle pour franchir la distance.
                 </div>
               )}
             </div>
@@ -392,32 +389,31 @@ export default function ChallengePanel({
           {/* Hit / Failed status notifications feedback */}
           <div className="flex flex-col gap-3">
             {challenge.hasHit ? (
-              <div className="flex items-center gap-2.5 p-3 rounded-xl bg-emerald-50 border border-emerald-250 text-emerald-800">
+              <div className="flex items-center gap-2.5 p-3 rounded-xl bg-emerald-55 border border-emerald-250 text-emerald-800 font-sans">
                 <CheckCircle2 className="w-5 h-5 text-emerald-600 animate-bounce" />
                 <div className="text-xs leading-normal">
-                  <b>Succès !</b> Vous avez magistralement touché la cible en <b>{challenge.attempts}</b> essais. Votre angle ({Math.round(params.angle)}°) et votre vitesse ({params.v0.toFixed(1)} m/s) sont parfaits.
+                  <b>Cible atteinte avec succès !</b> Vous avez touché le centre de la cible en <b>{challenge.attempts}</b> tentative(s). Votre angle d'inclinaison ({Math.round(params.angle)}°) et vitesse ({params.v0.toFixed(1)} m/s) sont parfaits !
                 </div>
               </div>
             ) : challenge.isFailed ? (
-              <div className="flex items-center gap-2.5 p-3 rounded-xl bg-red-50 border border-red-250 text-red-800">
-                <XCircle className="w-5 h-5 text-red-650" />
+              <div className="flex items-center gap-2.5 p-3 rounded-xl bg-red-50 border border-red-200 text-red-800 font-sans">
+                <XCircle className="w-5 h-5 text-red-600" />
                 <div className="text-xs leading-normal">
-                  <b>Collision !</b> Votre tir s'est fracassé contre l'obstacle ou a touché le sol à côté de la cible. Ajustez vos paramètres et réessayez !
+                  <b>Impact manqué / Échec du tir !</b> Le projectile s'est écrasé au sol ou contre l'obstacle avant d'atteindre la cible. Modifiez la vitesse initiale et l'angle pour ajuster la portée et le sommet !
                 </div>
               </div>
             ) : (
-              <div className="text-xs text-slate-500 leading-relaxed bg-slate-50 p-3 rounded-xl border border-slate-100 flex items-start gap-2">
+              <div className="text-xs text-slate-500 leading-relaxed bg-slate-50/70 p-3 rounded-xl border border-slate-100/50 flex items-start gap-2 font-sans">
                 <HelpCircle className="w-4 h-4 text-indigo-500 mt-0.5 shrink-0" />
                 <span>
-                  Configurez la vitesse <b>v₀</b> et l'angle <b>θ</b> dans le panneau latéral droit, puis cliquez sur <b>Lancer</b> pour voir si vous atteignez la cible !
+                  Ajustez la <b>masse, la vitesse initiale et l'angle d'inclinaison</b> dans le panneau latéral pour adapter la trajectoire, puis cliquez sur le bouton <b>Lancer</b> pour lancer le projectile physique.
                 </span>
               </div>
             )}
 
-            {/* Quick corrective hint block */}
             {!challenge.hasHit && !challenge.isFailed && (
-              <div className="text-[11px] text-slate-500 italic">
-                💡 <b>Indice physique :</b> Pour passer par-dessus un mur situé à {challenge.obstacleX}m, la hauteur de décollage au sommet doit être bien supérieure à {challenge.obstacleHeight}m. Utilisez la formule de la flèche !
+              <div className="text-[11px] text-slate-500 italic font-sans">
+                💡 <b>Indice d'apprentissage :</b> Pour franchir un obstacle situé à {challenge.obstacleX} m, l'altitude de la trajectoire à cette abscisse doit être supérieure à {challenge.obstacleHeight} m. Utilisez un angle supérieur à 45° pour une cloche plus haute !
               </div>
             )}
           </div>
@@ -426,24 +422,24 @@ export default function ChallengePanel({
           <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-100">
             <button
               onClick={generateRandomChallenge}
-              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer"
+              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer font-sans"
             >
-              <RefreshCcw className="w-3.5 h-3.5" /> Generer aléatoire
+              <RefreshCcw className="w-3.5 h-3.5" /> Générer un défi aléatoire
             </button>
           </div>
         </div>
       ) : (
         /* Inactive welcome state: listing potential levels */
         <div className="space-y-4">
-          <p className="text-[11px] md:text-xs text-slate-500 leading-relaxed">
-            Mettez les notions de physique (portée, angle complémentaire, hauteur de chute) en pratique dans d'authentiques scénarios d'entraînement militaire ou de lancer :
+          <p className="text-[11px] md:text-xs text-slate-550 leading-relaxed font-sans">
+            Cher élève, appliquez les lois du mouvement d'un projectile dans un champ de pesanteur uniforme (portée, sommet, zéniths) pour atteindre ces objectifs académiques et surmonter les obstacles :
           </p>
 
           <div className="space-y-3">
             {PRESET_LEVELS.map((level) => (
               <div
                 key={level.id}
-                className="group border border-slate-150 p-3 rounded-xl hover:border-slate-300 hover:bg-slate-50 transition flex items-center justify-between gap-4"
+                className="group border border-slate-150 p-3 rounded-xl hover:border-slate-350 hover:bg-slate-50/50 transition flex items-center justify-between gap-4"
               >
                 <div className="space-y-1">
                   <h3 className="text-xs font-bold text-slate-800">{level.name}</h3>
@@ -453,7 +449,7 @@ export default function ChallengePanel({
                   onClick={() => loadLevel(level)}
                   className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] font-bold rounded-lg cursor-pointer transition shadow-sm whitespace-nowrap"
                 >
-                  Jouer
+                  Commencer le défi
                 </button>
               </div>
             ))}
@@ -463,9 +459,9 @@ export default function ChallengePanel({
               onClick={generateRandomChallenge}
               className="border-2 border-dashed border-slate-200 p-3.5 rounded-xl text-center cursor-pointer hover:border-indigo-400 hover:bg-indigo-50/10 transition group"
             >
-              <Trophy className="w-5 h-5 text-amber-500 mx-auto mb-1 group-hover:scale-110 transition-transform" />
-              <span className="text-xs font-bold text-slate-700 block">Défi Sandbox Aléatoire</span>
-              <span className="text-[10px] text-slate-400">Position de la cible et hauteur d'obstacle tirées au sort !</span>
+              <Trophy className="w-5 h-5 text-amber-500 mx-auto mb-1 group-hover:scale-110 transition-transform animate-pulse" />
+              <span className="text-xs font-bold text-slate-700 block">Arène des défis aléatoires</span>
+              <span className="text-[10px] text-slate-400">Générez une cible et un obstacle de hauteurs et positions aléatoires de manière automatique !</span>
             </div>
           </div>
         </div>
